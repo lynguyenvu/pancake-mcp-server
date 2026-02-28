@@ -46,6 +46,24 @@ cd pancake-mcp-server
 pip install -e .
 ```
 
+**Kiểm tra cài đặt thành công:**
+
+```bash
+# 1. Package đã được cài?
+pip show pancake-mcp
+# → Hiển thị Name, Version, Location... là OK
+
+# 2. Lệnh stdio hoạt động?
+pancake-mcp-stdio --help 2>&1 | head -5
+# → Hiển thị usage là OK (không cần API key thật để chạy --help)
+
+# 3. Server HTTP khởi động được? (test nhanh rồi Ctrl+C)
+PANCAKE_API_KEY=test uvicorn pancake_mcp.server:app --port 8000 &
+sleep 2 && curl -s http://localhost:8000/health
+# → {"status": "ok", "server": "pancake-pos-mcp"}
+kill %1
+```
+
 ### 2. Lấy API keys
 
 Server dùng **2 loại key riêng biệt** cho 2 API khác nhau:
