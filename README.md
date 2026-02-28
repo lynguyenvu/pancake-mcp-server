@@ -306,6 +306,30 @@ uvicorn pancake_mcp.server:app --reload --port 8000
 
 ---
 
+## Gỡ cài đặt
+
+**1. Xóa package Python:**
+```bash
+pip uninstall pancake-mcp
+```
+
+**2. Xóa config Claude Desktop** — mở file config và xóa block `"pancake"`:
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+
+**3. Xóa thư mục source** (nếu đã clone):
+```bash
+rm -rf pancake-mcp-server/
+```
+
+**4. Nếu dùng Docker:**
+```bash
+docker compose down --volumes
+```
+
+---
+
 ## Đóng góp & hỗ trợ
 
 Tạo [Issue](https://github.com/lynguyenvu/pancake-mcp-server/issues) nếu gặp lỗi hoặc có đề xuất tính năng mới.
