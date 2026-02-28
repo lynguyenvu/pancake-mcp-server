@@ -17,7 +17,7 @@ def test_health_endpoint():
 
 @pytest.mark.asyncio
 async def test_all_tools_registered():
-    """Verify all 19 expected tools are registered on the MCP instance."""
+    """Verify all 25 expected tools are registered on the MCP instance."""
     expected = {
         # shop
         "get_shops", "get_payment_methods",
@@ -29,6 +29,9 @@ async def test_all_tools_registered():
         "list_warehouses", "create_warehouse", "update_warehouse", "get_inventory_history",
         # shipping
         "arrange_shipment", "get_tracking_url", "list_return_orders", "create_return_order",
+        # conversations
+        "list_conversations", "get_conversation", "get_messages",
+        "send_message", "update_conversation",
     }
     tools = await _mcp.list_tools()
     registered = {t.name for t in tools}

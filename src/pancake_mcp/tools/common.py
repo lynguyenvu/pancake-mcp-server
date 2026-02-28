@@ -4,14 +4,20 @@ import json
 from typing import Any
 
 from pancake_mcp.client import PancakeClient
-from pancake_mcp.deps import get_api_key
+from pancake_mcp.chat_client import PancakeChatClient
+from pancake_mcp.deps import get_access_token, get_api_key
 
 MAX_PAGE_SIZE = 50
 
 
 def get_client() -> PancakeClient:
-    """Build a PancakeClient from the current request's API key."""
+    """Build a PancakeClient (POS API) from the current request's API key."""
     return PancakeClient(get_api_key())
+
+
+def get_chat_client() -> PancakeChatClient:
+    """Build a PancakeChatClient (Chat/Inbox API) from the current request's access token."""
+    return PancakeChatClient(get_access_token())
 
 
 def fmt(data: Any) -> str:

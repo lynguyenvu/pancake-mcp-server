@@ -4,7 +4,7 @@ Kết nối Claude với [Pancake POS](https://pancake.biz) thông qua MCP — c
 
 > **Pancake POS** là nền tảng quản lý bán hàng đa kênh phổ biến tại Việt Nam (Facebook, Website, TikTok Shop).
 
-## 20 công cụ MCP
+## 25 công cụ MCP
 
 | Module | Công cụ |
 |--------|---------|
@@ -13,6 +13,7 @@ Kết nối Claude với [Pancake POS](https://pancake.biz) thông qua MCP — c
 | Đơn hàng | `search_orders`, `get_order`, `create_order`, `update_order`, `get_order_tags`, `get_order_sources`, `get_active_promotions` |
 | Kho | `list_warehouses`, `create_warehouse`, `update_warehouse`, `get_inventory_history` |
 | Vận chuyển | `arrange_shipment`, `get_tracking_url`, `list_return_orders`, `create_return_order` |
+| Hội thoại | `list_conversations`, `get_conversation`, `get_messages`, `send_message`, `update_conversation` |
 
 ---
 
@@ -102,6 +103,12 @@ Sau khi kết nối, bạn có thể chat với Claude:
 "Kiểm tra trạng thái đơn hàng #12345"
 "Danh sách kho hàng của shop"
 "Tạo đơn hoàn hàng cho đơn #12345 với lý do sản phẩm lỗi"
+
+"Xem các tin nhắn inbox chưa xử lý của page Facebook"
+"Lấy lịch sử tin nhắn với khách hội thoại ID xyz"
+"Gửi tin nhắn cho khách trong hội thoại ID xyz: Cảm ơn bạn đã liên hệ!"
+"Đóng hội thoại ID xyz và gắn tag 'đã xử lý'"
+"Assign hội thoại ID xyz cho nhân viên ID 123"
 ```
 
 ---
@@ -124,8 +131,11 @@ Sao chép `.env.example` thành `.env`:
 MCP_HOST=0.0.0.0
 MCP_PORT=8000
 
-# Single-tenant: khoá cứng API key (bỏ ghi chú để dùng)
-# PANCAKE_API_KEY=your_key_here
+# POS API key (đơn hàng, kho, vận chuyển)
+# PANCAKE_API_KEY=your_pos_api_key
+
+# Chat/Inbox token (tin nhắn, hội thoại) — nếu không set, dùng chung với PANCAKE_API_KEY
+# PANCAKE_ACCESS_TOKEN=your_chat_token
 ```
 
 ---
