@@ -46,13 +46,52 @@ cd pancake-mcp-server
 pip install -e .
 ```
 
-### 2. Lấy Pancake API key
+### 2. Lấy API keys
+
+Server dùng **2 loại key riêng biệt** cho 2 API khác nhau:
+
+#### POS API key — đơn hàng, kho, vận chuyển
 
 1. Đăng nhập tại [pancake.biz](https://pancake.biz)
 2. Vào **Cài đặt → Nâng cao → Kết nối bên thứ 3 → Webhook/API**
-3. Tạo hoặc copy API key
+3. Tạo hoặc copy API key → đây là `PANCAKE_API_KEY`
 
-> **Lưu ý về Chat/Inbox API:** Nếu muốn dùng các tool hội thoại (`list_conversations`, `send_message`...), bạn có thể cần token riêng từ **Pancake → Settings → API** (mục Pages.fm). Nếu không set, server sẽ dùng chung API key POS.
+#### Chat/Inbox access token — hội thoại, tin nhắn
+
+Token này **khác hoàn toàn** với POS API key, phải lấy riêng:
+
+1. Đăng nhập tại [pancake.biz](https://pancake.biz)
+2. Vào **Cài đặt → API** (hoặc **Settings → API**, mục **Pages.fm / Chat**)
+3. Tạo hoặc copy access token → đây là `PANCAKE_ACCESS_TOKEN`
+
+> **Nếu không set `PANCAKE_ACCESS_TOKEN`**, server tự động dùng `PANCAKE_API_KEY` cho cả Chat API (hoạt động được nếu tài khoản có đủ quyền).
+
+---
+
+### Nếu chỉ cần xử lý tin nhắn (Chat/Inbox only)
+
+Bạn **không cần** `PANCAKE_API_KEY` nếu chỉ dùng các tool hội thoại. Cấu hình tối giản:
+
+```env
+PANCAKE_ACCESS_TOKEN=your_chat_access_token
+```
+
+Hoặc trong Claude Desktop config:
+
+```json
+{
+  "mcpServers": {
+    "pancake": {
+      "command": "pancake-mcp-stdio",
+      "env": {
+        "PANCAKE_ACCESS_TOKEN": "your_chat_access_token"
+      }
+    }
+  }
+}
+```
+
+> Khi chỉ set `PANCAKE_ACCESS_TOKEN` (không set `PANCAKE_API_KEY`), các tool POS như `search_orders`, `list_warehouses`... sẽ báo lỗi thiếu key — nhưng các tool hội thoại (`list_conversations`, `send_message`, `get_messages`...) hoạt động bình thường.
 
 ---
 
@@ -79,26 +118,48 @@ Mở file config:
 
 Thêm block sau (giữ nguyên các mục đã có):
 
+**Dùng đầy đủ (POS + Chat):**
 ```json
 {
   "mcpServers": {
     "pancake": {
       "command": "pancake-mcp-stdio",
       "env": {
-        "PANCAKE_API_KEY": "your_pancake_api_key_here"
+        "PANCAKE_API_KEY": "your_pos_api_key",
+        "PANCAKE_ACCESS_TOKEN": "your_chat_access_token"
       }
     }
   }
 }
 ```
 
-> Nếu có cả Chat token riêng:
-> ```json
-> "env": {
->   "PANCAKE_API_KEY": "your_pos_api_key",
->   "PANCAKE_ACCESS_TOKEN": "your_chat_token"
-> }
-> ```
+**Chỉ dùng POS (đơn hàng, kho, vận chuyển):**
+```json
+{
+  "mcpServers": {
+    "pancake": {
+      "command": "pancake-mcp-stdio",
+      "env": {
+        "PANCAKE_API_KEY": "your_pos_api_key"
+      }
+    }
+  }
+}
+```
+
+**Chỉ dùng Chat/Inbox (tin nhắn, hội thoại):**
+```json
+{
+  "mcpServers": {
+    "pancake": {
+      "command": "pancake-mcp-stdio",
+      "env": {
+        "PANCAKE_ACCESS_TOKEN": "your_chat_access_token"
+      }
+    }
+  }
+}
+```
 
 **Bước 4:** Khởi động lại Claude Desktop
 
