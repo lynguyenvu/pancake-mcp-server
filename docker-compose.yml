@@ -1,0 +1,17 @@
+services:
+  pancake-mcp:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8000
+      # Optional: set for single-tenant mode (overrides Bearer token)
+      # - PANCAKE_API_KEY=your_key_here
+      - PANCAKE_API_BASE_URL=https://pos.pages.fm/api/v1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
