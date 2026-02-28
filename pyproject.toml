@@ -24,7 +24,8 @@ dev = [
 ]
 
 [project.scripts]
-pancake-mcp = "pancake_mcp.server:main"
+pancake-mcp       = "pancake_mcp.server:main"
+pancake-mcp-stdio = "pancake_mcp.server:main_stdio"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pancake_mcp"]

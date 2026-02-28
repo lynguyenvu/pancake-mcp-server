@@ -1,10 +1,10 @@
 """FastMCP server entry point for the Pancake POS MCP integration.
 
-Transport: Streamable HTTP (Claude custom connector compatible)
-Auth: Bearer token = user's Pancake API key (stateless pass-through)
-
-Run:
-    uvicorn pancake_mcp.server:app --host 0.0.0.0 --port 8000
+Two transport modes:
+  HTTP (remote)  — uvicorn pancake_mcp.server:app --host 0.0.0.0 --port 8000
+                   Auth: Bearer token = Pancake API key
+  stdio (local)  — pancake-mcp-stdio
+                   Auth: PANCAKE_API_KEY env var (key never leaves local machine)
 """
 
 import os
@@ -62,11 +62,30 @@ app = Starlette(
 
 
 def main() -> None:
+    """HTTP mode — for Claude custom connectors (remote deployment)."""
     import uvicorn
     host = os.getenv("MCP_HOST", "0.0.0.0")
     port = int(os.getenv("MCP_PORT", "8000"))
     logger.info("Starting Pancake MCP server on %s:%s", host, port)
     uvicorn.run("pancake_mcp.server:app", host=host, port=port, reload=False)
+
+
+def main_stdio() -> None:
+    """Stdio mode — for Claude Desktop (local, most secure, API key never leaves machine).
+
+    Requires PANCAKE_API_KEY env var to be set.
+    """
+    import asyncio
+
+    api_key = os.getenv("PANCAKE_API_KEY", "").strip()
+    if not api_key:
+        raise SystemExit(
+            "Error: PANCAKE_API_KEY env var is required for stdio mode.\n"
+            "Set it in your Claude Desktop config (see README)."
+        )
+    # Log to stderr only — stdout is reserved for MCP protocol messages
+    logging.basicConfig(level=logging.WARNING, stream=__import__("sys").stderr)
+    asyncio.run(_mcp.run())  # stdio transport (default)
 
 
 if __name__ == "__main__":

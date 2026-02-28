@@ -38,9 +38,34 @@ Server available at `http://localhost:8000/mcp`
 
 ## Connect to Claude
 
+### Option A: Local stdio (most secure — API key never leaves your machine)
+
+```bash
+pip install -e .
+```
+
+Add to Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "pancake": {
+      "command": "pancake-mcp-stdio",
+      "env": {
+        "PANCAKE_API_KEY": "your_pancake_api_key_here"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop — tools appear automatically. ✅
+
+### Option B: Remote HTTP (Claude.ai custom connector)
+
 1. Get your Pancake API key: **Settings → Advance → Third-party connection → Webhook/API**
 2. Deploy this server with a public HTTPS URL
-3. In Claude: **Settings → Connectors → Add custom connector**
+3. In Claude.ai: **Settings → Connectors → Add custom connector**
    - MCP Server URL: `https://your-domain.com/mcp`
    - Authentication: Bearer token → paste your Pancake API key
 
