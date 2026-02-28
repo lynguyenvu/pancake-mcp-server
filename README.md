@@ -38,7 +38,60 @@ Kết nối Claude với [Pancake](https://pancake.biz) thông qua MCP — cho p
 
 ## Cài đặt
 
-### 1. Clone và cài package
+### Phương pháp 1: Dùng script cài đặt tự động (khuyên dùng)
+
+**Dành cho người mới bắt đầu - hỗ trợ tất cả hệ điều hành**
+
+```bash
+# Tải script cài đặt
+curl -O https://raw.githubusercontent.com/lynguyenvu/pancake-mcp-server/main/install.sh
+chmod +x install.sh
+./install.sh
+```
+
+**Trên Windows:**
+```cmd
+# Tải và chạy script install.bat từ PowerShell hoặc Command Prompt
+curl -O https://raw.githubusercontent.com/lynguyenvu/pancake-mcp-server/main/install.bat
+./install.bat
+```
+
+Script sẽ:
+- Kiểm tra và cài đặt Docker nếu chưa có
+- Tự động tải mã nguồn
+- Tạo file cấu hình `.env`
+- Build và chạy server Docker
+
+### Phương pháp 2: Quick start (nếu đã có Docker)
+
+```bash
+# Clone repository
+git clone https://github.com/lynguyenvu/pancake-mcp-server.git
+cd pancake-mcp-server
+
+# Copy environment file
+cp .env.example .env
+# Chỉnh sửa .env để thêm API keys
+
+# Chạy server
+./start.sh
+```
+
+**Quản lý server:**
+```bash
+# Dừng server
+./stop.sh
+
+# Xem logs
+docker compose logs -f
+
+# Khởi động lại
+./start.sh
+```
+
+### Phương pháp 3: Cài đặt thủ công
+
+#### 1. Clone và cài package
 
 ```bash
 git clone https://github.com/lynguyenvu/pancake-mcp-server.git
@@ -193,16 +246,22 @@ Phù hợp cho team nhiều người hoặc khi không dùng Claude Desktop.
 
 ```bash
 cp .env.example .env
-# Chỉnh sửa .env nếu cần
+# Chỉnh sửa .env để thêm API keys
 ```
 
 **Bước 2:** Chạy server
 
 ```bash
-# Docker (khuyến nghị cho production)
+# Docker - đơn giản (sử dụng docker-compose.yml)
 docker compose up -d
 
-# Hoặc trực tiếp
+# Docker - sản xuất (sử dụng cấu hình nâng cao)
+docker compose -f docker-compose.prod.yml up -d
+
+# Docker - với nginx reverse proxy (SSL, tải cân bằng)
+docker compose -f docker-compose.prod.yml --profile with-nginx up -d
+
+# Hoặc trực tiếp (development)
 pip install -e .
 uvicorn pancake_mcp.server:app --host 0.0.0.0 --port 8000
 ```
