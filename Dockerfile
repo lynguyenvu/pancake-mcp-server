@@ -6,8 +6,11 @@ WORKDIR /app
 COPY pyproject.toml ./
 RUN pip install --no-cache-dir -e ".[dev]" 2>/dev/null || pip install --no-cache-dir -e .
 
-# Copy source
+# Copy source - copy the entire src directory to make sure the module is accessible
 COPY src/ ./src/
+
+# Also copy the rest of the source to the Python path
+WORKDIR /app/src
 
 EXPOSE 8000
 
