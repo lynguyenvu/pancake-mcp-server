@@ -410,3 +410,27 @@ docker compose down --volumes
 ## Đóng góp & hỗ trợ
 
 Tạo [Issue](https://github.com/lynguyenvu/pancake-mcp-server/issues) nếu gặp lỗi hoặc có đề xuất tính năng mới.
+
+## Docker MCP Registry Integration
+
+MCP server này có thể được tích hợp với Docker MCP Registry để dễ dàng quản lý và phân phối:
+
+### Đăng ký với Docker MCP Registry
+
+Server này được chuẩn bị sẵn sàng để tích hợp với [Docker MCP Registry](https://github.com/docker/mcp-registry). Để thêm vào registry:
+
+1. Fork repository: `https://github.com/docker/mcp-registry`
+2. Copy thư mục `servers/pancake-mcp` vào thư mục `servers/` của bản fork
+3. Tạo pull request với các thay đổi
+
+### Cấu trúc tích hợp
+
+- **server.yaml**: Định nghĩa cấu hình server và các tùy chọn cấu hình
+- **tools.json**: Danh sách 25 công cụ MCP được hỗ trợ
+- **readme.md**: Tài liệu hướng dẫn ngắn gọn
+
+Sau khi được chấp nhận vào Docker MCP Registry, người dùng có thể dễ dàng tìm thấy và cài đặt Pancake MCP server trực tiếp từ Docker Desktop.
+
+## Giấy phép
+
+Dự án này được cấp phép theo giấy phép MIT - xem tệp [LICENSE](LICENSE) để biết chi tiết.
