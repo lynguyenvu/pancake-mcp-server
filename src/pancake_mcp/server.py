@@ -21,6 +21,7 @@ from pancake_mcp.tools.orders import register_order_tools
 from pancake_mcp.tools.inventory import register_inventory_tools
 from pancake_mcp.tools.shipping import register_shipping_tools
 from pancake_mcp.tools.conversations import register_conversation_tools
+from pancake_mcp.tools.attachments import register_attachment_tools
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -42,6 +43,7 @@ def create_app() -> FastMCP:
     register_inventory_tools(mcp)
     register_shipping_tools(mcp)
     register_conversation_tools(mcp)
+    register_attachment_tools(mcp)
 
     return mcp
 

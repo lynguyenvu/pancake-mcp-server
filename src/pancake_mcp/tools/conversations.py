@@ -88,6 +88,7 @@ def register_conversation_tools(mcp: Any) -> None:
         ctx: Context,
         page_id: str,
         conversation_id: str,
+        customer_id: str | None = None,
         page: int = 1,
         page_size: int = 30,
     ) -> str:
@@ -96,6 +97,7 @@ def register_conversation_tools(mcp: Any) -> None:
         Args:
             page_id: Facebook page ID.
             conversation_id: Conversation ID from list_conversations.
+            customer_id: Customer ID to authenticate the request (required for some accounts).
             page: Page number (default 1, newest first).
             page_size: Messages per page, max 50 (default 30).
 
@@ -104,11 +106,20 @@ def register_conversation_tools(mcp: Any) -> None:
         """
         try:
             async with get_chat_client() as c:
+                # Prepare parameters
+                params = {
+                    'page': page,
+                    'page_size': clamp_page_size(page_size),
+                }
+
+                # Add customer_id to parameters if provided
+                if customer_id:
+                    params['customer_id'] = customer_id
+
                 result = await c.get_messages(
                     page_id,
                     conversation_id,
-                    page=page,
-                    page_size=clamp_page_size(page_size),
+                    **params
                 )
             return fmt(result)
         except PancakeAPIError as e:

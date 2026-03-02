@@ -25,6 +25,8 @@ Kết nối Claude với [Pancake](https://pancake.biz) thông qua MCP — cho p
 | 🏭 Kho hàng | `list_warehouses`, `create_warehouse`, `update_warehouse`, `get_inventory_history` |
 | 🚚 Vận chuyển | `arrange_shipment`, `get_tracking_url`, `list_return_orders`, `create_return_order` |
 | 💬 Hội thoại | `list_conversations`, `get_conversation`, `get_messages`, `send_message`, `update_conversation` |
+| 📎 Đính kèm | `list_message_attachment`, `download_attachment` |
+| 📎 Đính kèm | `list_message_attachment`, `download_attachment` |
 
 ---
 
@@ -87,7 +89,32 @@ docker compose logs -f
 
 # Khởi động lại
 ./start.sh
+
+# Khởi động lại sau khi reboot máy
+./restart_after_reboot.sh
 ```
+
+### Quản lý sau khi reboot máy:
+
+Mỗi lần khởi động lại máy tính, bạn cần chạy lại các dịch vụ Docker và ngrok:
+
+```bash
+# Cách đơn giản nhất:
+./restart_after_reboot.sh
+
+# Hoặc chạy từng bước:
+# 1. Khởi động Docker containers
+docker compose up -d
+
+# 2. Khởi động ngrok tunnel (nếu cần cho Claude AI)
+ngrok http 8000
+```
+
+Script `restart_after_reboot.sh` sẽ tự động:
+- Khởi động lại Docker containers
+- Kiểm tra trạng thái server
+- Khởi động ngrok tunnel (nếu có cài đặt)
+- Hiển thị URL để kết nối với Claude AI
 
 ### Phương pháp 3: Cài đặt thủ công
 
@@ -314,6 +341,13 @@ Xem các tin nhắn Facebook inbox chưa xử lý của page ID "xxx"
 Lịch sử chat trong hội thoại ID "conv123"
 Gửi tin nhắn: "Cảm ơn bạn! Đơn hàng sẽ được giao trong 2-3 ngày"
 Đóng hội thoại ID "conv123", gắn tag "đã xử lý"
+```
+
+**Đính kèm file:**
+```
+Liệt kê các file đính kèm trong hội thoại ID "conv123"
+Tải về file đính kèm từ tin nhắn thứ 5, file thứ 2
+Tải về ảnh từ hội thoại của khách hàng
 ```
 
 **Địa chỉ:**
