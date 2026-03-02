@@ -1,177 +1,123 @@
-# Hướng Dẫn Sử Dụng Pancake MCP Server - Dành Cho Người Dùng Cuối
+# Pancake MCP Server — Hướng dẫn cài đặt với Claude Desktop
 
-## Tổng Quan
+## 1. Yêu cầu
 
-Pancake MCP Server là công cụ giúp kết nối Claude AI với hệ thống bán hàng Pancake POS, cho phép bạn:
-- Quản lý đơn hàng, kho, vận chuyển
-- Xử lý tin nhắn khách hàng
-- Tự động hóa các tác vụ bán hàng
+| Thành phần | Yêu cầu |
+|------------|---------|
+| Docker Desktop | Đã cài đặt và đang chạy |
+| Claude Desktop | Phiên bản 1.1.x trở lên |
+| PANCAKE_API_KEY | API key từ tài khoản Pancake POS |
+| PANCAKE_ACCESS_TOKEN | Bearer token đăng nhập Pancake |
 
-## Yêu Cầu Hệ Thống
+## 2. Lấy thông tin xác thực
 
-- Máy tính có cài Docker
-- Tài khoản Pancake POS với quyền API
-- Claude Desktop hoặc Claude AI Pro/Team
+### PANCAKE_API_KEY
+Dùng để gọi API quản lý shop (đơn hàng, kho, giao hàng...).
 
-## Cài Đặt Ban Đầu
+1. Đăng nhập Pancake POS tại pos.pages.fm
+2. Vào Cài đặt → Tích hợp API
+3. Sao chép giá trị API Key
 
-### Bước 1: Cài Đặt Tự Động (Khuyên Dùng)
+### PANCAKE_ACCESS_TOKEN
+Bắt buộc để đọc tin nhắn và hội thoại từ inbox.
 
-Chạy lệnh sau trong Terminal/Command Prompt:
+1. Đăng nhập Pancake POS tại pos.pages.fm
+2. Mở DevTools trình duyệt (F12) → tab Network
+3. Thực hiện bất kỳ thao tác nào (ví dụ: mở đơn hàng)
+4. Tìm request bất kỳ đến pos.pages.fm/api → xem header Authorization
+5. Sao chép phần sau chữ Bearer (chuỗi JWT dài bắt đầu bằng eyJ...)
 
-**Windows:**
-```cmd
-curl -O https://raw.githubusercontent.com/lynguyenvu/pancake-mcp-server/main/install.bat
-./install.bat
-```
+⚠️ **Lưu ý**: PANCAKE_ACCESS_TOKEN là JWT có thời hạn. Khi Claude báo lỗi xác thực khi đọc tin nhắn, cần lấy lại token mới và cập nhật vào config.
 
-**macOS/Linux:**
+## 3. Các bước cài đặt
+
+### Bước 1 — Clone source code
 ```bash
-curl -O https://raw.githubusercontent.com/lynguyenvu/pancake-mcp-server/main/install.sh
-chmod +x install.sh
-./install.sh
+git clone <url-repo-pancake-mcp-server>
+cd pancake-mcp-server
 ```
 
-### Bước 2: Cấu Hình API Keys
-
-Sau khi cài đặt xong, mở file `.env` trong thư mục `pancake-mcp-server` và điền:
-
-```env
-PANCAKE_API_KEY=API_KEY_CỦA_BẠN
-PANCAKE_ACCESS_TOKEN=TOKEN_TRUY_CẬP_CỦA_BẠN
+### Bước 2 — Build Docker image
+```bash
+docker compose build
 ```
 
-**Lấy API Key từ Pancake:**
-1. Đăng nhập vào [pancake.biz](https://pancake.biz)
-2. Vào **Cài đặt → Nâng cao → Kết nối bên thứ 3 → Webhook/API** để lấy `PANCAKE_API_KEY`
-3. Vào **Cài đặt → API** để lấy `PANCAKE_ACCESS_TOKEN`
+Kiểm tra image đã được tạo:
+```bash
+docker images | grep pancake
+# Kết quả mong đợi: pancake-mcp-server-pancake-mcp   latest
+```
 
-## Kết Nối Với Claude
+### Bước 3 — Cấu hình Claude Desktop
 
-### Với Claude Desktop (An Toàn Nhất)
+Mở file config:
+```bash
+nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
 
-Mở file cấu hình của Claude:
-- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
-- **Linux:** `~/.config/Claude/claude_desktop_config.json`
-
-Thêm đoạn sau vào file (giữ nguyên các cấu hình khác):
-
+Nội dung chuẩn:
 ```json
 {
   "mcpServers": {
-    "pancake": {
-      "command": "pancake-mcp-stdio",
-      "env": {
-        "PANCAKE_API_KEY": "API_KEY_CỦA_BẠN",
-        "PANCAKE_ACCESS_TOKEN": "TOKEN_CỦA_BẠN"
-      }
+    "pancake-mcp": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "PANCAKE_API_KEY=<your_api_key>",
+        "-e", "PANCAKE_ACCESS_TOKEN=<your_access_token>",
+        "-e", "PYTHONPATH=/app/src",
+        "pancake-mcp-server-pancake-mcp:latest",
+        "pancake-mcp-stdio"
+      ]
     }
+  },
+  "preferences": {
+    "coworkScheduledTasksEnabled": true,
+    "sidebarMode": "task",
+    "coworkWebSearchEnabled": true
   }
 }
 ```
 
-Khởi động lại Claude Desktop.
+Giải thích các tham số:
 
-### Với Claude AI (Thông Qua HTTP)
+| Tham số | Giải thích |
+|---------|------------|
+| PANCAKE_API_KEY | API key quản lý shop |
+| PANCAKE_ACCESS_TOKEN | Bearer token để đọc tin nhắn, hội thoại |
+| PYTHONPATH=/app/src | Bắt buộc — giúp Python tìm module trong container |
+| pancake-mcp-stdio | Khởi động server ở chế độ stdio |
+| --rm | Tự xóa container sau khi Claude đóng |
+| -i | Giữ stdin mở — bắt buộc cho stdio transport |
 
-1. Khởi động server:
-```bash
-cd pancake-mcp-server
-./start.sh
-```
+⚠️ **Thay `<your_api_key>` và `<your_access_token>` bằng giá trị thực. Không giữ dấu `< >`.**
 
-2. Tạo đường hầm HTTPS (cho Claude AI):
-```bash
-ngrok http 8000
-```
+Lưu file: `Ctrl+O` → `Enter` → `Ctrl+X`
 
-3. Lấy URL từ ngrok (ví dụ: `https://abc123.ngrok-free.app`)
+### Bước 4 — Khởi động lại Claude Desktop
+Quit hoàn toàn (Cmd+Q) rồi mở lại. Các tool Pancake MCP sẽ tự động xuất hiện.
 
-4. Vào Claude AI → **Settings → Connectors → Add custom connector**
-   - **MCP Server URL:** `https://abc123.ngrok-free.app/mcp`
-   - **Authentication:** Bearer token → điền API key của bạn
+## 4. Kiểm tra hoạt động
+Sau khi khởi động lại Claude, thử các câu lệnh sau trong chat:
 
-## Quản Lý Dịch Vụ
+| Câu lệnh thử | Mục đích kiểm tra |
+|--------------|-------------------|
+| Lấy danh sách shop | Kiểm tra kết nối cơ bản và PANCAKE_API_KEY |
+| Xem đơn hàng mới nhất | Kiểm tra quyền truy cập đơn hàng |
+| Đọc tin nhắn inbox | Kiểm tra PANCAKE_ACCESS_TOKEN |
 
-### Khởi Động/Dừng Server
+## 5. Xử lý lỗi thường gặp
 
-```bash
-# Khởi động server
-./start.sh
+| Lỗi | Nguyên nhân | Cách fix |
+|-----|-------------|----------|
+| Claude Desktop không khởi động | JSON config bị lỗi cú pháp | Xóa phần mcpServers, restart, thêm lại. Validate tại jsonlint.com |
+| No module named 'pancake_mcp' | Thiếu PYTHONPATH | Thêm -e PYTHONPATH=/app/src vào args |
+| docker: not found | Claude không tìm thấy docker | Dùng đường dẫn đầy đủ /usr/local/bin/docker |
+| Image not found | Image chưa build hoặc sai tên | Chạy lại docker compose build, kiểm tra tên bằng docker images |
+| Server disconnected | Token sai hoặc hết hạn | Lấy lại token mới từ Pancake POS và cập nhật config |
 
-# Dừng server
-./stop.sh
+## 6. Lưu ý quan trọng
 
-# Xem trạng thái
-docker compose ps
-
-# Xem log nếu có lỗi
-docker compose logs -f
-```
-
-### Sau Khi Khởi Động Lại Máy
-
-Mỗi lần khởi động lại máy tính, bạn cần chạy lại các dịch vụ:
-
-```bash
-# Cách đơn giản nhất:
-./restart_after_reboot.sh
-
-# Hoặc chạy từng bước:
-docker compose up -d  # Khởi động lại containers
-ngrok http 8000       # Khởi động lại ngrok nếu cần
-```
-
-## Sử Dụng Với Claude
-
-Sau khi kết nối thành công, bạn có thể yêu cầu Claude thực hiện các tác vụ như:
-
-```
-- Lấy danh sách đơn hàng mới hôm nay
-- Tạo đơn hàng mới cho khách hàng Nguyễn Văn A
-- Cập nhật trạng thái đơn #12345 thành "đang giao"
-- Xem lịch sử chat trong hội thoại ID "conv123"
-- Gửi tin nhắn cho khách hàng: "Cảm ơn bạn! Đơn hàng sẽ được giao trong 2-3 ngày"
-```
-
-## Giải Quyết Sự Cố
-
-### Server Không Khởi Động Được
-
-1. Kiểm tra Docker có đang chạy không
-2. Xem log: `docker compose logs -f`
-3. Chắc chắn rằng cổng 8000 không bị chiếm bởi ứng dụng khác
-
-### Không Kết Nối Được Với Claude
-
-1. Kiểm tra lại API keys có đúng không
-2. Đảm bảo server đang chạy: `docker compose ps`
-3. Với Claude AI, kiểm tra ngrok có đang chạy và URL còn hiệu lực không
-
-### Lỗi ModuleNotFound trong Docker
-
-Chạy lại lệnh sau để rebuild container:
-```bash
-docker compose build --no-cache
-docker compose up -d
-```
-
-## Gỡ Cài Đặt
-
-```bash
-# Dừng và xóa containers
-docker compose down --volumes
-
-# Xóa file cấu hình Claude (nếu có)
-# Xóa thư mục pancake-mcp-server
-rm -rf pancake-mcp-server/
-```
-
-## Hỗ Trợ
-
-Nếu gặp vấn đề, vui lòng tạo issue tại: [GitHub Issues](https://github.com/lynguyenvu/pancake-mcp-server/issues)
-
----
-
-**Lưu ý:** Đây là phiên bản dành cho người dùng cuối với các script tự động hóa để dễ sử dụng. Tất cả dữ liệu được xử lý cục bộ trên máy bạn, đảm bảo an toàn bảo mật.
+- Docker Desktop phải chạy trước khi mở Claude Desktop
+- Không cần giữ container chạy liên tục — Claude tự khởi/dừng nhờ flag --rm
+- Sau khi update code, build lại image và restart Claude Desktop để load phiên bản mới

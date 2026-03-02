@@ -214,9 +214,7 @@ Mở file config:
 - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 - **Linux:** `~/.config/Claude/claude_desktop_config.json`
 
-Thêm block sau (giữ nguyên các mục đã có):
-
-**Dùng đầy đủ (POS + Chat):**
+**Cách 1: Dùng trực tiếp lệnh pancake-mcp-stdio (đơn giản hơn):**
 ```json
 {
   "mcpServers": {
@@ -231,29 +229,20 @@ Thêm block sau (giữ nguyên các mục đã có):
 }
 ```
 
-**Chỉ dùng POS (đơn hàng, kho, vận chuyển):**
+**Cách 2: Dùng Docker container (được thử nghiệm thực tế):**
 ```json
 {
   "mcpServers": {
-    "pancake": {
-      "command": "pancake-mcp-stdio",
-      "env": {
-        "PANCAKE_API_KEY": "your_pos_api_key"
-      }
-    }
-  }
-}
-```
-
-**Chỉ dùng Chat/Inbox (tin nhắn, hội thoại):**
-```json
-{
-  "mcpServers": {
-    "pancake": {
-      "command": "pancake-mcp-stdio",
-      "env": {
-        "PANCAKE_ACCESS_TOKEN": "your_chat_access_token"
-      }
+    "pancake-mcp": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "PANCAKE_API_KEY=your_pos_api_key",
+        "-e", "PANCAKE_ACCESS_TOKEN=your_chat_access_token",
+        "-e", "PYTHONPATH=/app/src",
+        "pancake-mcp-server-pancake-mcp:latest",
+        "pancake-mcp-stdio"
+      ]
     }
   }
 }
@@ -262,6 +251,10 @@ Thêm block sau (giữ nguyên các mục đã có):
 **Bước 4:** Khởi động lại Claude Desktop
 
 Công cụ Pancake xuất hiện tự động trong Claude ✅
+
+### Hướng dẫn chi tiết cài đặt với Claude Desktop
+
+Xem file [user_guide.md](user_guide.md) để có hướng dẫn cài đặt chi tiết theo phương pháp đã được thử nghiệm thực tế.
 
 ---
 
