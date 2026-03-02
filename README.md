@@ -63,7 +63,63 @@ Script sẽ:
 - Tạo file cấu hình `.env`
 - Build và chạy server Docker
 
-### Phương pháp 2: Quick start (nếu đã có Docker)
+### Phương pháp 2: Cài đặt thủ công trên Windows với Docker Desktop
+
+**Dành cho người dùng Windows muốn chạy trên Docker Desktop mà không cần file `.env`**
+
+#### Bước 1: Clone Repository
+
+Mở Command Prompt hoặc PowerShell và chạy:
+
+```cmd
+git clone https://github.com/lynguyenvu/pancake-mcp-server.git
+cd pancake-mcp-server
+```
+
+#### Bước 2: Build Docker Image
+
+```cmd
+docker build -t pancake-mcp-server-pancake-mcp:latest .
+```
+
+#### Bước 3: Cấu Hình Claude Desktop trên Windows
+
+Mở file cấu hình của Claude Desktop trên Windows:
+
+```
+%APPDATA%\Claude\claude_desktop_config.json
+```
+
+Bạn có thể mở nhanh bằng cách:
+1. Nhấn `Win + R`
+2. Gõ `%APPDATA%\Claude\claude_desktop_config.json`
+3. Nhấn Enter
+
+Thêm cấu hình sau (thay thế `your_pos_api_key_here` và `your_chat_access_token_here` bằng API keys thực tế):
+
+```json
+{
+  "mcpServers": {
+    "pancake-mcp": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "PANCAKE_API_KEY=your_pos_api_key_here",
+        "-e", "PANCAKE_ACCESS_TOKEN=your_chat_access_token_here",
+        "-e", "PYTHONPATH=/app/src",
+        "pancake-mcp-server-pancake-mcp:latest",
+        "pancake-mcp-stdio"
+      ]
+    }
+  }
+}
+```
+
+Khởi động lại Claude Desktop để áp dụng thay đổi.
+
+> **Lưu ý:** Đảm bảo Docker Desktop đang chạy trên Windows trước khi thực hiện các lệnh. API keys được lưu trực tiếp trong cấu hình Claude Desktop, không cần file `.env`.
+
+### Phương pháp 3: Quick start (nếu đã có Docker)
 
 ```bash
 # Clone repository
