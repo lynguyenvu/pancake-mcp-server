@@ -1,0 +1,83 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Create pip configuration for timeout handling
+COPY pip.conf /etc/pip.conf
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy project files
+COPY pyproject.toml ./
+COPY src/ ./src/
+
+# Set environment variables for timeout handling
+ENV PIP_TIMEOUT=600
+ENV PIP_RETRIES=5
+ENV PIP_DEFAULT_TIMEOUT=100
+
+# Install pip and upgrade it first
+RUN pip install --upgrade pip setuptools wheel
+
+# Create a script to install dependencies with retry logic
+RUN echo '#!/bin/bash\n\
+MAX_RETRIES=5\n\
+TIMEOUT=600\n\
+RETRY_DELAY=10\n\
+\n\
+for dep in "$@"; do\n\
+  RETRIES=0\n\
+  while [ $RETRIES -lt $MAX_RETRIES ]; do\n\
+    echo "Installing $dep (attempt $((RETRIES+1))/$MAX_RETRIES)..." >&2\n\
+    if pip install --no-cache-dir --timeout=$TIMEOUT --default-timeout=100 "$dep"; then\n\
+      echo "Successfully installed $dep" >&2\n\
+      break\n\
+    else\n\
+      RETRIES=$((RETRIES+1))\n\
+      if [ $RETRIES -lt $MAX_RETRIES ]; then\n\
+        echo "Installation failed, retrying in $RETRY_DELAY seconds..." >&2\n\
+        sleep $RETRY_DELAY\n\
+      else\n\
+        echo "Failed to install $dep after $MAX_RETRIES attempts" >&2\n\
+        exit 1\n\
+      fi\n\
+    fi\n\
+  done\n\
+done' > /tmp/install_with_retry.sh && chmod +x /tmp/install_with_retry.sh
+
+# Install core dependencies with retry logic
+RUN /tmp/install_with_retry.sh \
+    "fastmcp>=2.3.0" \
+    "httpx>=0.27.0" \
+    "uvicorn[standard]>=0.30.0" \
+    "pydantic>=2.7.0" \
+    "python-dotenv>=1.0.0" \
+    "aiohttp>=3.8.0"
+
+# Install image processing dependencies with retry logic
+RUN /tmp/install_with_retry.sh \
+    "Pillow>=10.0.0" \
+    "opencv-python-headless>=4.8.0.0" \
+    "pytesseract>=0.3.10" \
+    "easyocr>=1.7.0"
+
+# Install dev dependencies with retry logic
+RUN /tmp/install_with_retry.sh \
+    "pytest>=8.0.0" \
+    "pytest-asyncio>=0.23.0" \
+    "respx>=0.21.0" \
+    "pytest-httpx>=0.30.0"
+
+# Install the package itself with retry logic
+RUN /tmp/install_with_retry.sh "-e ."
+
+# Set working directory to source
+WORKDIR /app/src
+
+EXPOSE 8000
+
+CMD ["uvicorn", "pancake_mcp.server:app", "--host", "0.0.0.0", "--port", "8000"]
