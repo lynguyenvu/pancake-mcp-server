@@ -26,7 +26,6 @@ Kết nối Claude với [Pancake](https://pancake.biz) thông qua MCP — cho p
 | 🚚 Vận chuyển | `arrange_shipment`, `get_tracking_url`, `list_return_orders`, `create_return_order` |
 | 💬 Hội thoại | `list_conversations`, `get_conversation`, `get_messages`, `send_message`, `update_conversation` |
 | 📎 Đính kèm | `list_message_attachment`, `download_attachment`, `preview_attachment_content`, `extract_text_from_image`, `analyze_image_content`, `detect_objects_in_image` |
-| 📎 Đính kèm | `list_message_attachment`, `download_attachment` |
 
 ---
 
