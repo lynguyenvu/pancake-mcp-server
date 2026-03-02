@@ -1,16 +1,99 @@
 """MCP tools for handling file attachments from conversations."""
 
 import json
+import os
+import re
 from typing import Any
 import aiohttp
 from pathlib import Path
 import tempfile
-import os
 
 from fastmcp import Context
 
 from pancake_mcp.client import PancakeAPIError
 from pancake_mcp.tools.common import fmt, get_chat_client
+
+
+def _is_safe_path(base_path: Path, target_path: Path, follow_symlinks: bool = False) -> bool:
+    """
+    Check if a target path is safe to access from within a base path.
+
+    Args:
+        base_path: The allowed base directory
+        target_path: The path to validate
+        follow_symlinks: Whether to resolve symlinks when checking
+
+    Returns:
+        True if the path is safe, False otherwise
+    """
+    try:
+        base_resolved = base_path.resolve()
+        if follow_symlinks:
+            target_resolved = target_path.resolve()
+        else:
+            target_resolved = target_path.absolute()
+
+        # Check if the target path is within the base path
+        target_resolved.relative_to(base_resolved)
+        return True
+    except ValueError:
+        # relative_to raises ValueError if target is not within base
+        return False
+
+
+def _sanitize_filename(filename: str) -> str:
+    """
+    Sanitize a filename to prevent directory traversal and other security issues.
+
+    Args:
+        filename: Original filename
+
+    Returns:
+        Sanitized filename
+    """
+    # Remove any path traversal sequences
+    filename = re.sub(r'\.\.\/', '', filename)
+    filename = re.sub(r'\.\.\\', '', filename)
+
+    # Get just the basename to prevent path manipulation
+    filename = Path(filename).name
+
+    # Remove potentially dangerous characters
+    filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
+
+    # Ensure the filename is not empty
+    if not filename or filename in ('.', '..'):
+        filename = 'unnamed_file'
+
+    return filename
+
+
+def _get_allowed_download_paths() -> list[Path]:
+    """
+    Get list of allowed download paths from environment variables or default.
+
+    Returns:
+        List of allowed download paths
+    """
+    allowed_paths = []
+
+    # Add default downloads directory
+    allowed_paths.append(Path('./downloads').resolve())
+
+    # Add additional allowed paths from environment variable
+    env_paths = os.getenv('ALLOWED_DOWNLOAD_PATHS', '')
+    if env_paths:
+        for path_str in env_paths.split(':'):
+            path_str = path_str.strip()
+            if path_str:
+                try:
+                    path_obj = Path(path_str).resolve()
+                    allowed_paths.append(path_obj)
+                except Exception:
+                    # Skip invalid paths
+                    continue
+
+    return allowed_paths
 
 
 def register_attachment_tools(mcp: Any) -> None:
@@ -108,6 +191,7 @@ def register_attachment_tools(mcp: Any) -> None:
             message_index: Index of the message containing the attachment (0-based).
             attachment_index: Index of the attachment in the message (0-based).
             download_dir: Directory to save the downloaded file (default: ./downloads).
+                         Can be a mounted directory from the host system.
 
         Returns:
             JSON with download status, file path, and file info.
@@ -137,11 +221,28 @@ def register_attachment_tools(mcp: Any) -> None:
             if not attachment_url:
                 return f"Error: No download URL found for attachment {message_index}:{attachment_index}."
 
-            # Create download directory
-            download_path = Path(download_dir)
+            # Validate and sanitize the download directory
+            download_path = Path(download_dir).resolve()
+
+            # Check if the download directory is in the allowed paths
+            allowed_paths = _get_allowed_download_paths()
+            is_allowed = False
+            for allowed_path in allowed_paths:
+                if _is_safe_path(allowed_path, download_path) or download_path == allowed_path:
+                    is_allowed = True
+                    break
+
+            if not is_allowed:
+                return f"Error: Download directory '{download_dir}' is not in allowed paths. Allowed paths: {[str(p) for p in allowed_paths]}"
+
+            # Create download directory (now validated to be safe)
             download_path.mkdir(parents=True, exist_ok=True)
 
-            # Determine filename
+            # Check if we have write permissions to the directory
+            if not os.access(download_path, os.W_OK):
+                return f"Error: No write permissions for directory '{download_dir}'."
+
+            # Determine filename and sanitize it
             from urllib.parse import urlparse
             parsed_url = urlparse(attachment_url)
             original_filename = Path(parsed_url.path).name
@@ -151,7 +252,13 @@ def register_attachment_tools(mcp: Any) -> None:
                 file_type = target_attachment.get('type', 'file')
                 original_filename = f"attachment_msg{message_index}_att{attachment_index}.{file_type}"
 
-            file_path = download_path / original_filename
+            # Sanitize the filename to prevent directory traversal
+            sanitized_filename = _sanitize_filename(original_filename)
+            file_path = download_path / sanitized_filename
+
+            # Final safety check: ensure the final file path is within the allowed download directory
+            if not _is_safe_path(download_path, file_path):
+                return f"Error: Invalid file path construction - path traversal detected."
 
             # Download the file
             async with aiohttp.ClientSession() as session:
@@ -170,6 +277,7 @@ def register_attachment_tools(mcp: Any) -> None:
                 "status": "success",
                 "download_path": str(file_path.absolute()),
                 "original_filename": original_filename,
+                "sanitized_filename": sanitized_filename,
                 "file_size_bytes": stat.st_size,
                 "attachment_info": target_attachment
             }
