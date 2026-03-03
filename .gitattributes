@@ -1,0 +1,6 @@
+# Ensure consistent LF line endings for files that break with CRLF
+*.sh        text eol=lf
+*.conf      text eol=lf
+*.env       text eol=lf
+.env.*      text eol=lf
+Dockerfile* text eol=lf
