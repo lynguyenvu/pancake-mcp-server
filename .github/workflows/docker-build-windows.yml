@@ -14,9 +14,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Switch Docker to Linux containers
+      - name: Verify Docker is available
         run: |
-          & "$env:ProgramFiles\Docker\Docker\DockerCli.exe" -SwitchLinuxEngine
+          docker version
+          docker info
 
       - name: Build Docker image
         run: docker build -t pancake-mcp-server:test .
