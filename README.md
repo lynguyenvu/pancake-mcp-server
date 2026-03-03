@@ -219,6 +219,35 @@ Token này **khác hoàn toàn** với POS API key, phải lấy riêng:
 
 > **Nếu không set `PANCAKE_ACCESS_TOKEN`**, server tự động dùng `PANCAKE_API_KEY` cho cả Chat API (hoạt động được nếu tài khoản có đủ quyền).
 
+#### Lấy Page ID — cần cho các tool hội thoại/tin nhắn
+
+Các tool hội thoại (`list_conversations`, `get_messages`, `send_message`...) yêu cầu `page_id`. Đây là ID nội bộ của Pancake, **không phải** username hiển thị trên URL.
+
+> **Lưu ý:** URL trên Pancake dạng `pancake.vn/pzl_xxxxxxxxxx` chứa **username**, không phải page_id. Hai giá trị này khác nhau.
+
+**Bước 1:** Lấy access token (xem phần Chat/Inbox access token ở trên)
+
+**Bước 2:** Gọi API `/pages` để lấy danh sách page
+
+```bash
+curl "https://pages.fm/api/v1/pages?access_token=YOUR_ACCESS_TOKEN"
+```
+
+**Bước 3:** Tìm `id` trong kết quả trả về
+
+Kết quả nằm trong `categorized.activated`, mỗi page có:
+
+```json
+{
+  "id": "pzl_123456789012345678",      ← ĐÂY là page_id (dùng cho API)
+  "name": "Tên page của bạn",
+  "platform": "personal_zalo",
+  "username": "pzl_xxxxxxxxxx"          ← đây là username (hiển thị trên URL)
+}
+```
+
+Dùng giá trị `id` làm `page_id` khi gọi các tool hội thoại.
+
 ---
 
 ### Nếu chỉ cần xử lý tin nhắn (Chat/Inbox only)
