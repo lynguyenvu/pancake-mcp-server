@@ -2,12 +2,12 @@
 FROM astral/uv:python3.11-bookworm-slim AS builder
 
 # Set UV env variables
+# Disable Python downloads, because we want to use the system interpreter
+# across both images. If using a managed Python version, it needs to be
+# copied from the build image into the final image.
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
-    UV_PYTHON_INSTALL_DIR=/opt/python
-
-#  Create UV_PYTHON_INSTALL_DIR
-RUN mkdir -p /opt/python
+    UV_PYTHON_DOWNLOADS=0
 
 # Set working directory
 WORKDIR /app
@@ -27,17 +27,13 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --no-dev --frozen
 
 # STAGE 2: Runtime
-FROM python:3.11-slim AS runtime
+# It is important to use the image that matches the builder, as the path to the
+# Python executable must be the same, e.g., using `python:3.10-slim-bookworm`
+# will fail.
+FROM python:3.11-slim-bookworm AS runtime
 
 # Set working directory
 WORKDIR /app
-
-#  Set environment variables
-ENV PATH="/app/.venv/bin:/opt/python:$PATH" \
-    PYTHONUNBUFFERED=1
-
-#  Copy Python installation from builder
-COPY --from=builder /opt/python /opt/python
 
 #  Copy the app from builder
 COPY --from=builder /app /app
