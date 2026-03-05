@@ -1,12 +1,10 @@
 """MCP tools for order management."""
 
-import json
 from typing import Any
 
-from fastmcp import Context
-
-from pancake_mcp.client import PancakeAPIError
-from pancake_mcp.tools.common import MAX_PAGE_SIZE, clamp_page_size, fmt, get_client
+from pancake_mcp.tools.common import (
+    build_payload, call_api, clamp_page_size, get_client, parse_json_param,
+)
 
 
 def register_order_tools(mcp: Any) -> None:
@@ -14,7 +12,6 @@ def register_order_tools(mcp: Any) -> None:
 
     @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": True})
     async def search_orders(
-        ctx: Context,
         shop_id: str,
         status: str | None = None,
         page: int = 1,
@@ -41,25 +38,23 @@ def register_order_tools(mcp: Any) -> None:
         Returns:
             JSON with orders list and pagination info (total_entries, total_pages).
         """
-        try:
-            async with get_client() as c:
-                result = await c.list_orders(
-                    shop_id,
-                    status=status,
-                    page=page,
-                    page_size=clamp_page_size(page_size),
-                    tags=tags,
-                    source_id=source_id,
-                    from_date=from_date,
-                    to_date=to_date,
-                    keyword=keyword,
-                )
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error searching orders: {e}"
+        return await call_api(
+            get_client,
+            lambda c: c.list_orders(
+                shop_id,
+                status=status,
+                page=page,
+                page_size=clamp_page_size(page_size),
+                tags=tags,
+                source_id=source_id,
+                from_date=from_date,
+                to_date=to_date,
+                keyword=keyword,
+            ),
+        )
 
     @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": True})
-    async def get_order(ctx: Context, shop_id: str, order_id: str) -> str:
+    async def get_order(shop_id: str, order_id: str) -> str:
         """Get full details of a single order including line items, customer, shipping.
 
         Args:
@@ -69,16 +64,10 @@ def register_order_tools(mcp: Any) -> None:
         Returns:
             JSON with complete order details.
         """
-        try:
-            async with get_client() as c:
-                result = await c.get_order(shop_id, order_id)
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error fetching order {order_id}: {e}"
+        return await call_api(get_client, lambda c: c.get_order(shop_id, order_id))
 
     @mcp.tool(annotations={"destructiveHint": False, "openWorldHint": True})
     async def create_order(
-        ctx: Context,
         shop_id: str,
         customer_name: str,
         customer_phone: str,
@@ -110,35 +99,21 @@ def register_order_tools(mcp: Any) -> None:
         Returns:
             JSON with created order details including the new order_id.
         """
-        try:
-            line_items = json.loads(items)
-        except json.JSONDecodeError:
-            return "Error: 'items' must be a valid JSON array string. Example: '[{\"product_id\": \"123\", \"quantity\": 2}]'"
+        line_items, err = parse_json_param(items, "items")
+        if err:
+            return err
 
-        payload: dict[str, Any] = {
-            "customer_name": customer_name,
-            "customer_phone": customer_phone,
-            "items": line_items,
-        }
-        for key, val in [
-            ("address", address), ("province_id", province_id),
-            ("district_id", district_id), ("commune_id", commune_id),
-            ("note", note), ("source_id", source_id),
-            ("payment_method", payment_method),
-        ]:
-            if val is not None:
-                payload[key] = val
+        payload = build_payload(
+            {"customer_name": customer_name, "customer_phone": customer_phone, "items": line_items},
+            address=address, province_id=province_id, district_id=district_id,
+            commune_id=commune_id, note=note, source_id=source_id,
+            payment_method=payment_method,
+        )
 
-        try:
-            async with get_client() as c:
-                result = await c.create_order(shop_id, payload)
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error creating order: {e}"
+        return await call_api(get_client, lambda c: c.create_order(shop_id, payload))
 
     @mcp.tool(annotations={"idempotentHint": False, "openWorldHint": True})
     async def update_order(
-        ctx: Context,
         shop_id: str,
         order_id: str,
         status: str | None = None,
@@ -169,28 +144,21 @@ def register_order_tools(mcp: Any) -> None:
         Returns:
             JSON with updated order details.
         """
-        payload: dict[str, Any] = {}
-        for key, val in [
-            ("status", status), ("note", note), ("customer_name", customer_name),
-            ("customer_phone", customer_phone), ("address", address),
-            ("province_id", province_id), ("district_id", district_id),
-            ("commune_id", commune_id),
-        ]:
-            if val is not None:
-                payload[key] = val
+        payload = build_payload(
+            {},
+            status=status, note=note, customer_name=customer_name,
+            customer_phone=customer_phone, address=address,
+            province_id=province_id, district_id=district_id,
+            commune_id=commune_id,
+        )
 
         if not payload:
             return "Error: Provide at least one field to update."
 
-        try:
-            async with get_client() as c:
-                result = await c.update_order(shop_id, order_id, payload)
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error updating order {order_id}: {e}"
+        return await call_api(get_client, lambda c: c.update_order(shop_id, order_id, payload))
 
     @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": True})
-    async def get_order_tags(ctx: Context, shop_id: str) -> str:
+    async def get_order_tags(shop_id: str) -> str:
         """List all available order tags for a shop.
 
         Use tag names when filtering orders with search_orders.
@@ -201,16 +169,11 @@ def register_order_tools(mcp: Any) -> None:
         Returns:
             JSON list of tags with id and name.
         """
-        try:
-            async with get_client() as c:
-                result = await c.get_order_tags(shop_id)
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error fetching order tags: {e}"
+        return await call_api(get_client, lambda c: c.get_order_tags(shop_id))
 
     @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": True})
-    async def get_order_sources(ctx: Context, shop_id: str) -> str:
-        """List available order sources (e.g. Facebook, Website, Phone).
+    async def get_order_sources(shop_id: str) -> str:
+        """List available order sources (e.g. Facebook, Zalo, Website, Phone).
 
         Use source_id when creating or filtering orders.
 
@@ -220,19 +183,10 @@ def register_order_tools(mcp: Any) -> None:
         Returns:
             JSON list of order sources with id and name.
         """
-        try:
-            async with get_client() as c:
-                result = await c.get_order_sources(shop_id)
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error fetching order sources: {e}"
+        return await call_api(get_client, lambda c: c.get_order_sources(shop_id))
 
     @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": True})
-    async def get_active_promotions(
-        ctx: Context,
-        shop_id: str,
-        items: str,
-    ) -> str:
+    async def get_active_promotions(shop_id: str, items: str) -> str:
         """Get currently active promotions applicable to a set of items.
 
         Args:
@@ -243,14 +197,11 @@ def register_order_tools(mcp: Any) -> None:
         Returns:
             JSON list of applicable promotions with discount details.
         """
-        try:
-            line_items = json.loads(items)
-        except json.JSONDecodeError:
-            return "Error: 'items' must be a valid JSON array string."
+        line_items, err = parse_json_param(items, "items")
+        if err:
+            return err
 
-        try:
-            async with get_client() as c:
-                result = await c.get_active_promotions(shop_id, {"items": line_items})
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error fetching promotions: {e}"
+        return await call_api(
+            get_client,
+            lambda c: c.get_active_promotions(shop_id, {"items": line_items}),
+        )

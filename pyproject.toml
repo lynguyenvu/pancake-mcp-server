@@ -9,14 +9,10 @@ description = "Remote MCP server integrating Claude with Pancake POS API"
 requires-python = ">=3.11"
 dependencies = [
     "aiohttp>=3.13.3",
-    "easyocr>=1.7.2",
     "fastmcp>=3.1.0",
     "httpx>=0.28.1",
-    "opencv-python-headless>=4.13.0.92",
     "pillow>=12.1.1",
-    "pydantic>=2.12.5",
     "pytesseract>=0.3.13",
-    "python-dotenv>=1.2.2",
     "uvicorn[standard]>=0.41.0",
 ]
 

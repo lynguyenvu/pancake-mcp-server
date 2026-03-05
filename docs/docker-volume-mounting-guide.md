@@ -43,30 +43,6 @@ services:
     command: ["pancake-mcp-http"]
 ```
 
-## Production Docker Compose Configuration
-
-For production environments using `docker-compose.prod.yml`:
-
-```yaml
-version: '3.8'
-
-services:
-  pancake-mcp:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - PANCAKE_API_KEY=${PANCAKE_API_KEY}
-      - PANCAKE_ACCESS_TOKEN=${PANCAKE_ACCESS_TOKEN}
-      - ALLOWED_DOWNLOAD_PATHS=/host-downloads:/shared-data
-    volumes:
-      - /home/user/local-downloads:/host-downloads
-      - /opt/shared:/shared-data
-      - ./logs:/app/logs
-    restart: unless-stopped
-    command: ["pancake-mcp-http"]
-```
-
 ## Using with Claude Desktop (stdio mode)
 
 When using Docker volumes with Claude Desktop, update your Claude Desktop configuration:
@@ -108,7 +84,6 @@ Once configured, you can use the `download_attachment` function with mounted pat
 ```python
 # This will work if /host-downloads is in ALLOWED_DOWNLOAD_PATHS and mounted
 result = await download_attachment(
-    ctx=ctx,
     page_id="page123",
     conversation_id="conv456",
     customer_id="cust789",
@@ -119,7 +94,6 @@ result = await download_attachment(
 
 # This will also work for the default downloads directory
 result = await download_attachment(
-    ctx=ctx,
     page_id="page123",
     conversation_id="conv456",
     customer_id="cust789",

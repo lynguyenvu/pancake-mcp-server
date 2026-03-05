@@ -2,10 +2,7 @@
 
 from typing import Any
 
-from fastmcp import Context
-
-from pancake_mcp.client import PancakeAPIError
-from pancake_mcp.tools.common import fmt, get_client
+from pancake_mcp.tools.common import call_api, get_client
 
 
 def register_shop_tools(mcp: Any) -> None:
@@ -14,26 +11,21 @@ def register_shop_tools(mcp: Any) -> None:
     @mcp.tool(
         annotations={"readOnlyHint": True, "openWorldHint": True}
     )
-    async def get_shops(ctx: Context) -> str:
+    async def get_shops() -> str:
         """List all shops linked to the current Pancake account.
 
-        Returns shop IDs, names, and linked Facebook pages. Use the returned
+        Returns shop IDs, names, and linked channel pages. Use the returned
         shop_id values in other tools that require a shop_id parameter.
 
         Returns:
             JSON with list of shops including id, name, pages.
         """
-        try:
-            async with get_client() as c:
-                result = await c.get_shops()
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error: {e}. Check your API key is valid."
+        return await call_api(get_client, lambda c: c.get_shops())
 
     @mcp.tool(
         annotations={"readOnlyHint": True, "openWorldHint": True}
     )
-    async def get_payment_methods(ctx: Context, shop_id: str) -> str:
+    async def get_payment_methods(shop_id: str) -> str:
         """List available bank payment methods configured for a shop.
 
         Args:
@@ -42,17 +34,12 @@ def register_shop_tools(mcp: Any) -> None:
         Returns:
             JSON list of payment methods with bank name, account number, owner.
         """
-        try:
-            async with get_client() as c:
-                result = await c.get_payment_methods(shop_id)
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error fetching payment methods: {e}"
+        return await call_api(get_client, lambda c: c.get_payment_methods(shop_id))
 
     @mcp.tool(
         annotations={"readOnlyHint": True, "openWorldHint": True}
     )
-    async def get_provinces(ctx: Context, country_code: str = "VN") -> str:
+    async def get_provinces(country_code: str = "VN") -> str:
         """List provinces/cities for address input.
 
         Use this to get province_id values needed for get_districts.
@@ -63,17 +50,12 @@ def register_shop_tools(mcp: Any) -> None:
         Returns:
             JSON list of provinces with id and name.
         """
-        try:
-            async with get_client() as c:
-                result = await c.get_provinces(country_code)
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error fetching provinces: {e}"
+        return await call_api(get_client, lambda c: c.get_provinces(country_code))
 
     @mcp.tool(
         annotations={"readOnlyHint": True, "openWorldHint": True}
     )
-    async def get_districts(ctx: Context, province_id: str) -> str:
+    async def get_districts(province_id: str) -> str:
         """List districts within a province for address input.
 
         Use this to get district_id values needed for get_communes.
@@ -84,17 +66,12 @@ def register_shop_tools(mcp: Any) -> None:
         Returns:
             JSON list of districts with id and name.
         """
-        try:
-            async with get_client() as c:
-                result = await c.get_districts(province_id)
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error fetching districts: {e}"
+        return await call_api(get_client, lambda c: c.get_districts(province_id))
 
     @mcp.tool(
         annotations={"readOnlyHint": True, "openWorldHint": True}
     )
-    async def get_communes(ctx: Context, district_id: str) -> str:
+    async def get_communes(district_id: str) -> str:
         """List communes/wards within a district for address input.
 
         Args:
@@ -103,10 +80,4 @@ def register_shop_tools(mcp: Any) -> None:
         Returns:
             JSON list of communes with id and name.
         """
-        try:
-            async with get_client() as c:
-                result = await c.get_communes(district_id)
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error fetching communes: {e}"
-
+        return await call_api(get_client, lambda c: c.get_communes(district_id))

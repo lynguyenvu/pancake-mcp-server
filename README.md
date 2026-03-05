@@ -8,7 +8,7 @@ Kết nối Claude với [Pancake](https://pancake.biz) thông qua MCP — cho p
 
 ## Tính năng
 
-- **25 MCP tools** — đơn hàng, kho, vận chuyển, hội thoại/inbox, địa chỉ Việt Nam
+- **24 MCP tools** — đơn hàng, kho, vận chuyển, hội thoại/inbox, địa chỉ Việt Nam
 - **2 chế độ kết nối** — Local (stdio) cho Claude Desktop, Remote (HTTP) cho Claude.ai
 - **Bảo mật** — stdio mode: API key không rời máy bạn
 - **Docker ready** — deploy 1 lệnh
@@ -25,7 +25,7 @@ Kết nối Claude với [Pancake](https://pancake.biz) thông qua MCP — cho p
 | 🏭 Kho hàng | `list_warehouses`, `create_warehouse`, `update_warehouse`, `get_inventory_history` |
 | 🚚 Vận chuyển | `arrange_shipment`, `get_tracking_url`, `list_return_orders`, `create_return_order` |
 | 💬 Hội thoại | `list_conversations`, `get_conversation`, `get_messages`, `send_message`, `update_conversation` |
-| 📎 Đính kèm | `list_message_attachment`, `download_attachment`, `preview_attachment_content`, `extract_text_from_image`, `analyze_image_content`, `detect_objects_in_image` |
+| 📎 Đính kèm | `list_message_attachment`, `download_attachment`, `preview_attachment_content`, `extract_text_from_image`, `analyze_image_content` |
 
 ---
 
@@ -356,14 +356,8 @@ cp .env.example .env
 **Bước 2:** Chạy server
 
 ```bash
-# Docker - đơn giản (sử dụng docker-compose.yml)
+# Docker
 docker compose up -d
-
-# Docker - sản xuất (sử dụng cấu hình nâng cao)
-docker compose -f docker-compose.prod.yml up -d
-
-# Docker - với nginx reverse proxy (SSL, tải cân bằng)
-docker compose -f docker-compose.prod.yml --profile with-nginx up -d
 
 # Hoặc trực tiếp (development)
 pip install -e .

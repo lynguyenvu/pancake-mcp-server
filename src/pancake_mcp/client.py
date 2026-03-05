@@ -1,7 +1,7 @@
-"""Async HTTP client for the Pancake POS API.
+"""Async HTTP clients for Pancake APIs.
 
-Base URL: https://pos.pages.fm/api/v1
-Auth: api_key query param (passed from Bearer token in MCP request)
+BasePancakeClient — shared HTTP plumbing (auth, get/post/put, error handling).
+PancakeClient     — POS API (https://pos.pages.fm/api/v1), auth via api_key.
 """
 
 import os
@@ -21,32 +21,28 @@ class PancakeAPIError(Exception):
         super().__init__(f"Pancake API error {status_code}: {message}")
 
 
-class PancakeClient:
-    """Async client for Pancake POS API. One instance per request (stateless)."""
+class BasePancakeClient:
+    """Shared async HTTP client base for all Pancake APIs."""
 
-    def __init__(self, api_key: str) -> None:
-        self._api_key = api_key
+    def __init__(self, *, base_url: str, auth_param: str, auth_value: str, timeout: float = DEFAULT_TIMEOUT) -> None:
+        self._auth_param = auth_param
+        self._auth_value = auth_value
         self._http = httpx.AsyncClient(
-            base_url=PANCAKE_API_BASE_URL,
-            timeout=DEFAULT_TIMEOUT,
+            base_url=base_url,
+            timeout=timeout,
             headers={"Content-Type": "application/json"},
         )
 
-    async def __aenter__(self) -> "PancakeClient":
+    async def __aenter__(self):
         return self
 
     async def __aexit__(self, *_: Any) -> None:
         await self._http.aclose()
 
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
-
     def _params(self, extra: dict[str, Any] | None = None) -> dict[str, Any]:
-        """Build query params, always including the API key."""
-        params: dict[str, Any] = {"api_key": self._api_key}
+        """Build query params, always including the auth credential."""
+        params: dict[str, Any] = {self._auth_param: self._auth_value}
         if extra:
-            # Drop None values so we don't send empty query strings
             params.update({k: v for k, v in extra.items() if v is not None})
         return params
 
@@ -70,11 +66,21 @@ class PancakeClient:
             except Exception:
                 detail = resp.text
             raise PancakeAPIError(resp.status_code, detail)
-        # Guard against empty/non-JSON success responses (e.g. maintenance pages)
         try:
             return resp.json()
         except Exception:
             return {"raw": resp.text}
+
+
+class PancakeClient(BasePancakeClient):
+    """Async client for Pancake POS API. One instance per request (stateless)."""
+
+    def __init__(self, api_key: str) -> None:
+        super().__init__(
+            base_url=PANCAKE_API_BASE_URL,
+            auth_param="api_key",
+            auth_value=api_key,
+        )
 
     # ------------------------------------------------------------------
     # Shop

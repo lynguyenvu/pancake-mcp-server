@@ -1,12 +1,10 @@
 """MCP tools for shipping, tracking, and return orders."""
 
-import json
 from typing import Any
 
-from fastmcp import Context
-
-from pancake_mcp.client import PancakeAPIError
-from pancake_mcp.tools.common import clamp_page_size, fmt, get_client
+from pancake_mcp.tools.common import (
+    build_payload, call_api, clamp_page_size, get_client, parse_json_param,
+)
 
 
 def register_shipping_tools(mcp: Any) -> None:
@@ -14,7 +12,6 @@ def register_shipping_tools(mcp: Any) -> None:
 
     @mcp.tool(annotations={"idempotentHint": False, "openWorldHint": True})
     async def arrange_shipment(
-        ctx: Context,
         shop_id: str,
         order_id: str,
         carrier_code: str | None = None,
@@ -35,24 +32,14 @@ def register_shipping_tools(mcp: Any) -> None:
         Returns:
             JSON with shipment details and carrier tracking code.
         """
-        payload: dict[str, Any] = {"order_id": order_id}
-        for key, val in [
-            ("carrier_code", carrier_code),
-            ("warehouse_id", warehouse_id),
-            ("note", note),
-        ]:
-            if val is not None:
-                payload[key] = val
-
-        try:
-            async with get_client() as c:
-                result = await c.arrange_shipment(shop_id, payload)
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error arranging shipment for order {order_id}: {e}"
+        payload = build_payload(
+            {"order_id": order_id},
+            carrier_code=carrier_code, warehouse_id=warehouse_id, note=note,
+        )
+        return await call_api(get_client, lambda c: c.arrange_shipment(shop_id, payload))
 
     @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": True})
-    async def get_tracking_url(ctx: Context, shop_id: str, order_id: str) -> str:
+    async def get_tracking_url(shop_id: str, order_id: str) -> str:
         """Get a tracking URL so the customer can monitor their delivery.
 
         Args:
@@ -62,16 +49,13 @@ def register_shipping_tools(mcp: Any) -> None:
         Returns:
             JSON with tracking_url and current delivery status.
         """
-        try:
-            async with get_client() as c:
-                result = await c.get_tracking_url(shop_id, {"order_id": order_id})
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error getting tracking URL for order {order_id}: {e}"
+        return await call_api(
+            get_client,
+            lambda c: c.get_tracking_url(shop_id, {"order_id": order_id}),
+        )
 
     @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": True})
     async def list_return_orders(
-        ctx: Context,
         shop_id: str,
         page: int = 1,
         page_size: int = 20,
@@ -90,22 +74,19 @@ def register_shipping_tools(mcp: Any) -> None:
         Returns:
             JSON with list of return orders and pagination info.
         """
-        try:
-            async with get_client() as c:
-                result = await c.list_return_orders(
-                    shop_id,
-                    page=page,
-                    page_size=clamp_page_size(page_size),
-                    from_date=from_date,
-                    to_date=to_date,
-                )
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error listing return orders: {e}"
+        return await call_api(
+            get_client,
+            lambda c: c.list_return_orders(
+                shop_id,
+                page=page,
+                page_size=clamp_page_size(page_size),
+                from_date=from_date,
+                to_date=to_date,
+            ),
+        )
 
     @mcp.tool(annotations={"destructiveHint": False, "openWorldHint": True})
     async def create_return_order(
-        ctx: Context,
         shop_id: str,
         original_order_id: str,
         reason: str,
@@ -127,24 +108,13 @@ def register_shipping_tools(mcp: Any) -> None:
         Returns:
             JSON with created return order details including return_id.
         """
-        try:
-            return_items = json.loads(items)
-        except json.JSONDecodeError:
-            return "Error: 'items' must be a valid JSON array string."
+        return_items, err = parse_json_param(items, "items")
+        if err:
+            return err
 
-        payload: dict[str, Any] = {
-            "original_order_id": original_order_id,
-            "reason": reason,
-            "items": return_items,
-        }
-        if refund_amount is not None:
-            payload["refund_amount"] = refund_amount
-        if note is not None:
-            payload["note"] = note
+        payload = build_payload(
+            {"original_order_id": original_order_id, "reason": reason, "items": return_items},
+            refund_amount=refund_amount, note=note,
+        )
 
-        try:
-            async with get_client() as c:
-                result = await c.create_return_order(shop_id, payload)
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error creating return order: {e}"
+        return await call_api(get_client, lambda c: c.create_return_order(shop_id, payload))

@@ -32,17 +32,29 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # will fail.
 FROM python:3.11-slim-bookworm AS runtime
 
+# Install Tesseract OCR and Vietnamese language pack
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tesseract-ocr \
+    tesseract-ocr-vie \
+    && rm -rf /var/lib/apt/lists/*
+
 # Set working directory
 WORKDIR /app
 
 #  Copy the app from builder
 COPY --from=builder /app /app
 
+# Clean up bytecode cache to reduce image size
+RUN find /app/.venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
 # Set working directory to source
 WORKDIR /app/src
 
 # Expose port 8000 for service
 EXPOSE 8000
+
+# Add the virtual environment to PATH
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Run docker image as service
 CMD ["uvicorn", "pancake_mcp.server:app", "--host", "0.0.0.0", "--port", "8000"]

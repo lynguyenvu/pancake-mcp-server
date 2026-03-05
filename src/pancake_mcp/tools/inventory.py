@@ -2,17 +2,14 @@
 
 from typing import Any
 
-from fastmcp import Context
-
-from pancake_mcp.client import PancakeAPIError
-from pancake_mcp.tools.common import clamp_page_size, fmt, get_client
+from pancake_mcp.tools.common import build_payload, call_api, clamp_page_size, get_client
 
 
 def register_inventory_tools(mcp: Any) -> None:
     """Register warehouse and inventory tools onto the FastMCP instance."""
 
     @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": True})
-    async def list_warehouses(ctx: Context, shop_id: str) -> str:
+    async def list_warehouses(shop_id: str) -> str:
         """List all warehouses configured for a shop.
 
         Args:
@@ -21,16 +18,10 @@ def register_inventory_tools(mcp: Any) -> None:
         Returns:
             JSON list of warehouses with id, name, address, and status.
         """
-        try:
-            async with get_client() as c:
-                result = await c.list_warehouses(shop_id)
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error listing warehouses: {e}"
+        return await call_api(get_client, lambda c: c.list_warehouses(shop_id))
 
     @mcp.tool(annotations={"destructiveHint": False, "openWorldHint": True})
     async def create_warehouse(
-        ctx: Context,
         shop_id: str,
         name: str,
         address: str | None = None,
@@ -53,25 +44,15 @@ def register_inventory_tools(mcp: Any) -> None:
         Returns:
             JSON with created warehouse details including the new warehouse_id.
         """
-        payload: dict[str, Any] = {"name": name}
-        for key, val in [
-            ("address", address), ("province_id", province_id),
-            ("district_id", district_id), ("commune_id", commune_id),
-            ("phone", phone),
-        ]:
-            if val is not None:
-                payload[key] = val
-
-        try:
-            async with get_client() as c:
-                result = await c.create_warehouse(shop_id, payload)
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error creating warehouse: {e}"
+        payload = build_payload(
+            {"name": name},
+            address=address, province_id=province_id, district_id=district_id,
+            commune_id=commune_id, phone=phone,
+        )
+        return await call_api(get_client, lambda c: c.create_warehouse(shop_id, payload))
 
     @mcp.tool(annotations={"idempotentHint": False, "openWorldHint": True})
     async def update_warehouse(
-        ctx: Context,
         shop_id: str,
         warehouse_id: str,
         name: str | None = None,
@@ -98,28 +79,20 @@ def register_inventory_tools(mcp: Any) -> None:
         Returns:
             JSON with updated warehouse details.
         """
-        payload: dict[str, Any] = {}
-        for key, val in [
-            ("name", name), ("address", address), ("province_id", province_id),
-            ("district_id", district_id), ("commune_id", commune_id),
-            ("phone", phone), ("is_active", is_active),
-        ]:
-            if val is not None:
-                payload[key] = val
+        payload = build_payload(
+            {},
+            name=name, address=address, province_id=province_id,
+            district_id=district_id, commune_id=commune_id,
+            phone=phone, is_active=is_active,
+        )
 
         if not payload:
             return "Error: Provide at least one field to update."
 
-        try:
-            async with get_client() as c:
-                result = await c.update_warehouse(shop_id, warehouse_id, payload)
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error updating warehouse {warehouse_id}: {e}"
+        return await call_api(get_client, lambda c: c.update_warehouse(shop_id, warehouse_id, payload))
 
     @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": True})
     async def get_inventory_history(
-        ctx: Context,
         shop_id: str,
         warehouse_id: str | None = None,
         from_date: str | None = None,
@@ -140,16 +113,14 @@ def register_inventory_tools(mcp: Any) -> None:
         Returns:
             JSON list of inventory transactions with quantity changes and timestamps.
         """
-        try:
-            async with get_client() as c:
-                result = await c.get_inventory_history(
-                    shop_id,
-                    warehouse_id=warehouse_id,
-                    from_date=from_date,
-                    to_date=to_date,
-                    page=page,
-                    page_size=clamp_page_size(page_size),
-                )
-            return fmt(result)
-        except PancakeAPIError as e:
-            return f"Error fetching inventory history: {e}"
+        return await call_api(
+            get_client,
+            lambda c: c.get_inventory_history(
+                shop_id,
+                warehouse_id=warehouse_id,
+                from_date=from_date,
+                to_date=to_date,
+                page=page,
+                page_size=clamp_page_size(page_size),
+            ),
+        )

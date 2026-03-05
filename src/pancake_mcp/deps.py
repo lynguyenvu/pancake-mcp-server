@@ -52,7 +52,7 @@ def get_access_token() -> str:
 
     Precedence:
     1. PANCAKE_ACCESS_TOKEN env var (explicit chat token)
-    2. PANCAKE_API_KEY env var (fallback — same key often works for both APIs)
+    2. PANCAKE_API_KEY env var (fallback — paid API key works for all APIs)
     3. Authorization: Bearer <token> header
 
     Raises:
