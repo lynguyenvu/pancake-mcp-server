@@ -135,7 +135,10 @@ def register_conversation_tools(mcp: Any) -> None:
         Returns:
             JSON with sent message details and delivery status.
         """
-        payload = build_payload({"message": message}, attachment_url=attachment_url)
+        payload = build_payload(
+            {"action": "message", "message": message},
+            attachment_url=attachment_url,
+        )
         return await call_api(
             get_chat_client,
             lambda c: c.send_message(page_id, conversation_id, payload),
