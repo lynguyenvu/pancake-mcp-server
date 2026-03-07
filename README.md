@@ -8,14 +8,14 @@ Kết nối Claude với [Pancake](https://pancake.biz) thông qua MCP — cho p
 
 ## Tính năng
 
-- **24 MCP tools** — đơn hàng, kho, vận chuyển, hội thoại/inbox, địa chỉ Việt Nam
+- **30 MCP tools** — đơn hàng, kho, vận chuyển, hội thoại/inbox, đính kèm, địa chỉ Việt Nam
 - **2 chế độ kết nối** — Local (stdio) cho Claude Desktop, Remote (HTTP) cho Claude.ai
 - **Bảo mật** — stdio mode: API key không rời máy bạn
 - **Docker ready** — deploy 1 lệnh
 
 ---
 
-## 25 công cụ MCP
+## 30 công cụ MCP
 
 | Module | Công cụ |
 |--------|---------|
@@ -31,7 +31,7 @@ Kết nối Claude với [Pancake](https://pancake.biz) thông qua MCP — cho p
 
 ## Yêu cầu
 
-- Python 3.10+
+- Python 3.11+
 - Tài khoản Pancake với quyền truy cập API
 - Claude Desktop (cho stdio mode) hoặc Claude.ai Pro/Team (cho remote mode)
 
@@ -39,31 +39,7 @@ Kết nối Claude với [Pancake](https://pancake.biz) thông qua MCP — cho p
 
 ## Cài đặt
 
-### Phương pháp 1: Dùng script cài đặt tự động (khuyên dùng)
-
-**Dành cho người mới bắt đầu - hỗ trợ tất cả hệ điều hành**
-
-```bash
-# Tải script cài đặt
-curl -O https://raw.githubusercontent.com/lynguyenvu/pancake-mcp-server/main/install.sh
-chmod +x install.sh
-./install.sh
-```
-
-**Trên Windows:**
-```cmd
-# Tải và chạy script install.bat từ PowerShell hoặc Command Prompt
-curl -O https://raw.githubusercontent.com/lynguyenvu/pancake-mcp-server/main/install.bat
-./install.bat
-```
-
-Script sẽ:
-- Kiểm tra và cài đặt Docker nếu chưa có
-- Tự động tải mã nguồn
-- Tạo file cấu hình `.env`
-- Build và chạy server Docker
-
-### Phương pháp 2: Cài đặt thủ công trên Windows với Docker Desktop
+### Phương pháp 1: Cài đặt với Docker (khuyên dùng)
 
 **Dành cho người dùng Windows muốn chạy trên Docker Desktop mà không cần file `.env`**
 
@@ -79,7 +55,7 @@ cd pancake-mcp-server
 #### Bước 2: Build Docker Image
 
 ```cmd
-docker build -t pancake-mcp-server-pancake-mcp:latest .
+docker build -t pancake-mcp-server:latest .
 ```
 
 #### Bước 3: Cấu Hình Claude Desktop trên Windows
@@ -107,7 +83,7 @@ Thêm cấu hình sau (thay thế `your_pos_api_key_here` và `your_chat_access_
         "-e", "PANCAKE_API_KEY=your_pos_api_key_here",
         "-e", "PANCAKE_ACCESS_TOKEN=your_chat_access_token_here",
         "-e", "PYTHONPATH=/app/src",
-        "pancake-mcp-server-pancake-mcp:latest",
+        "pancake-mcp-server:latest",
         "pancake-mcp-stdio"
       ]
     }
@@ -119,7 +95,7 @@ Khởi động lại Claude Desktop để áp dụng thay đổi.
 
 > **Lưu ý:** Đảm bảo Docker Desktop đang chạy trên Windows trước khi thực hiện các lệnh. API keys được lưu trực tiếp trong cấu hình Claude Desktop, không cần file `.env`.
 
-### Phương pháp 3: Quick start (nếu đã có Docker)
+### Phương pháp 2: Quick start (nếu đã có Docker)
 
 ```bash
 # Clone repository
@@ -131,47 +107,22 @@ cp .env.example .env
 # Chỉnh sửa .env để thêm API keys
 
 # Chạy server
-./start.sh
+docker compose up -d
 ```
 
 **Quản lý server:**
 ```bash
-# Dừng server
-./stop.sh
-
 # Xem logs
 docker compose logs -f
 
+# Dừng server
+docker compose down
+
 # Khởi động lại
-./start.sh
-
-# Khởi động lại sau khi reboot máy
-./restart_after_reboot.sh
+docker compose restart
 ```
 
-### Quản lý sau khi reboot máy:
-
-Mỗi lần khởi động lại máy tính, bạn cần chạy lại các dịch vụ Docker và ngrok:
-
-```bash
-# Cách đơn giản nhất:
-./restart_after_reboot.sh
-
-# Hoặc chạy từng bước:
-# 1. Khởi động Docker containers
-docker compose up -d
-
-# 2. Khởi động ngrok tunnel (nếu cần cho Claude AI)
-ngrok http 8000
-```
-
-Script `restart_after_reboot.sh` sẽ tự động:
-- Khởi động lại Docker containers
-- Kiểm tra trạng thái server
-- Khởi động ngrok tunnel (nếu có cài đặt)
-- Hiển thị URL để kết nối với Claude AI
-
-### Phương pháp 3: Cài đặt thủ công
+### Phương pháp 3: Cài đặt thủ công (pip)
 
 #### 1. Clone và cài package
 
@@ -324,7 +275,7 @@ Mở file config:
         "-e", "PANCAKE_API_KEY=your_pos_api_key",
         "-e", "PANCAKE_ACCESS_TOKEN=your_chat_access_token",
         "-e", "PYTHONPATH=/app/src",
-        "pancake-mcp-server-pancake-mcp:latest",
+        "pancake-mcp-server:latest",
         "pancake-mcp-stdio"
       ]
     }
@@ -338,7 +289,7 @@ Công cụ Pancake xuất hiện tự động trong Claude ✅
 
 ### Hướng dẫn chi tiết cài đặt với Claude Desktop
 
-Xem file [user_guide.md](user_guide.md) để có hướng dẫn cài đặt chi tiết theo phương pháp đã được thử nghiệm thực tế.
+Xem file [docs/user-guide.md](docs/user-guide.md) để có hướng dẫn cài đặt chi tiết theo phương pháp đã được thử nghiệm thực tế.
 
 ---
 
@@ -515,26 +466,6 @@ docker compose down --volumes
 ## Đóng góp & hỗ trợ
 
 Tạo [Issue](https://github.com/lynguyenvu/pancake-mcp-server/issues) nếu gặp lỗi hoặc có đề xuất tính năng mới.
-
-## Docker MCP Registry Integration
-
-MCP server này có thể được tích hợp với Docker MCP Registry để dễ dàng quản lý và phân phối:
-
-### Đăng ký với Docker MCP Registry
-
-Server này được chuẩn bị sẵn sàng để tích hợp với [Docker MCP Registry](https://github.com/docker/mcp-registry). Để thêm vào registry:
-
-1. Fork repository: `https://github.com/docker/mcp-registry`
-2. Copy thư mục `servers/pancake-mcp` vào thư mục `servers/` của bản fork
-3. Tạo pull request với các thay đổi
-
-### Cấu trúc tích hợp
-
-- **server.yaml**: Định nghĩa cấu hình server và các tùy chọn cấu hình
-- **tools.json**: Danh sách 25 công cụ MCP được hỗ trợ
-- **readme.md**: Tài liệu hướng dẫn ngắn gọn
-
-Sau khi được chấp nhận vào Docker MCP Registry, người dùng có thể dễ dàng tìm thấy và cài đặt Pancake MCP server trực tiếp từ Docker Desktop.
 
 ## Giấy phép
 
