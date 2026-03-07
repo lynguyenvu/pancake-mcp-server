@@ -15,6 +15,19 @@ def register_conversation_tools(mcp: Any) -> None:
     """Register conversation and message tools onto the FastMCP instance."""
 
     @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": True})
+    async def list_pages() -> str:
+        """List all connected pages/channels (Facebook, Zalo, TikTok Shop, Website).
+
+        Use this tool to discover page_id values needed for other conversation tools.
+        Only requires PANCAKE_ACCESS_TOKEN — no PANCAKE_API_KEY needed.
+
+        Returns:
+            JSON with categorized pages: activated (connected), expired, etc.
+            Each page has: id (use as page_id), name, platform, username.
+        """
+        return await call_api(get_chat_client, lambda c: c.list_pages())
+
+    @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": True})
     async def list_conversations(
         page_id: str,
         conv_type: str | None = None,

@@ -26,6 +26,14 @@ class PancakeChatClient(BasePancakeClient):
         )
 
     # ------------------------------------------------------------------
+    # Pages
+    # ------------------------------------------------------------------
+
+    async def list_pages(self) -> Any:
+        """List all connected pages (Facebook, Zalo, TikTok, Website)."""
+        return await self._get("/pages")
+
+    # ------------------------------------------------------------------
     # Conversations
     # ------------------------------------------------------------------
 

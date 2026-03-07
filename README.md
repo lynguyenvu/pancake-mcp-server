@@ -8,14 +8,14 @@ Kết nối Claude với [Pancake](https://pancake.biz) thông qua MCP — cho p
 
 ## Tính năng
 
-- **30 MCP tools** — đơn hàng, kho, vận chuyển, hội thoại/inbox, đính kèm, địa chỉ Việt Nam
+- **31 MCP tools** — đơn hàng, kho, vận chuyển, hội thoại/inbox, đính kèm, địa chỉ Việt Nam
 - **2 chế độ kết nối** — Local (stdio) cho Claude Desktop, Remote (HTTP) cho Claude.ai
 - **Bảo mật** — stdio mode: API key không rời máy bạn
 - **Docker ready** — deploy 1 lệnh
 
 ---
 
-## 30 công cụ MCP
+## 31 công cụ MCP
 
 | Module | Công cụ |
 |--------|---------|
@@ -24,7 +24,7 @@ Kết nối Claude với [Pancake](https://pancake.biz) thông qua MCP — cho p
 | 📦 Đơn hàng | `search_orders`, `get_order`, `create_order`, `update_order`, `get_order_tags`, `get_order_sources`, `get_active_promotions` |
 | 🏭 Kho hàng | `list_warehouses`, `create_warehouse`, `update_warehouse`, `get_inventory_history` |
 | 🚚 Vận chuyển | `arrange_shipment`, `get_tracking_url`, `list_return_orders`, `create_return_order` |
-| 💬 Hội thoại | `list_conversations`, `get_conversation`, `get_messages`, `send_message`, `update_conversation` |
+| 💬 Hội thoại | `list_pages`, `list_conversations`, `get_conversation`, `get_messages`, `send_message`, `update_conversation` |
 | 📎 Đính kèm | `list_message_attachment`, `download_attachment`, `preview_attachment_content`, `extract_text_from_image`, `analyze_image_content` |
 
 ---
