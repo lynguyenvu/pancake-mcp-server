@@ -27,6 +27,24 @@ def register_conversation_tools(mcp: Any) -> None:
         """
         return await call_api(get_chat_client, lambda c: c.list_pages())
 
+    @mcp.tool(annotations={"destructiveHint": False, "openWorldHint": True})
+    async def generate_page_access_token(page_id: str) -> str:
+        """Generate page_access_token for sending messages.
+
+        IMPORTANT: send_message requires page_access_token (not access_token).
+        Call this tool first to get the token, then pass it to send_message.
+
+        Args:
+            page_id: Pancake page ID from list_pages.
+
+        Returns:
+            JSON with page_access_token field. Use this token for send_message.
+        """
+        return await call_api(
+            get_chat_client,
+            lambda c: c.generate_page_access_token(page_id),
+        )
+
     @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": True})
     async def list_conversations(
         page_id: str,
@@ -120,29 +138,28 @@ def register_conversation_tools(mcp: Any) -> None:
         page_id: str,
         conversation_id: str,
         message: str,
+        page_access_token: str,
         attachment_url: str | None = None,
     ) -> str:
         """Send a message or reply in a conversation.
 
-        Can reply to both inbox DMs and comments.
-        Note: Internally adds 'action: message' to payload (required by Pancake API).
+        IMPORTANT: Requires page_access_token (NOT access_token).
+        Call generate_page_access_token first to get the token.
 
         Args:
             page_id: Pancake page ID.
             conversation_id: Conversation ID from list_conversations.
             message: Text content of the message to send.
+            page_access_token: Token from generate_page_access_token (required).
             attachment_url: Optional public URL of an image or file to attach.
 
         Returns:
             JSON with sent message details and delivery status.
         """
-        payload = build_payload(
-            {"action": "message", "message": message},
-            attachment_url=attachment_url,
-        )
+        payload = build_payload({"message": message, "action": "reply_inbox"}, attachment_url=attachment_url)
         return await call_api(
             get_chat_client,
-            lambda c: c.send_message(page_id, conversation_id, payload),
+            lambda c: c.send_message(page_id, conversation_id, payload, page_access_token=page_access_token),
         )
 
     @mcp.tool(annotations={"idempotentHint": False, "openWorldHint": True})
