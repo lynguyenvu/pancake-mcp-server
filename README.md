@@ -8,7 +8,7 @@ Kết nối Claude với [Pancake](https://pancake.biz) thông qua MCP — cho p
 
 ## Tính năng
 
-- **31 MCP tools** — đơn hàng, kho, vận chuyển, hội thoại/inbox, đính kèm, địa chỉ Việt Nam
+- **32 MCP tools** — đơn hàng, kho, vận chuyển, hội thoại/inbox, đính kèm, địa chỉ Việt Nam
 - **2 chế độ kết nối** — Local (stdio) cho Claude Desktop, Remote (HTTP) cho Claude.ai
 - **Bảo mật** — stdio mode: API key không rời máy bạn
 - **Docker ready** — deploy 1 lệnh
@@ -24,7 +24,7 @@ Kết nối Claude với [Pancake](https://pancake.biz) thông qua MCP — cho p
 | 📦 Đơn hàng | `search_orders`, `get_order`, `create_order`, `update_order`, `get_order_tags`, `get_order_sources`, `get_active_promotions` |
 | 🏭 Kho hàng | `list_warehouses`, `create_warehouse`, `update_warehouse`, `get_inventory_history` |
 | 🚚 Vận chuyển | `arrange_shipment`, `get_tracking_url`, `list_return_orders`, `create_return_order` |
-| 💬 Hội thoại | `list_pages`, `list_conversations`, `get_conversation`, `get_messages`, `send_message`, `update_conversation` |
+| 💬 Hội thoại | `list_pages`, `generate_page_access_token`, `list_conversations`, `get_conversation`, `get_messages`, `send_message`, `update_conversation` |
 | 📎 Đính kèm | `list_message_attachment`, `download_attachment`, `preview_attachment_content`, `extract_text_from_image`, `analyze_image_content` |
 
 ---
@@ -364,6 +364,18 @@ Lịch sử chat trong hội thoại ID "conv123"
 Gửi tin nhắn: "Cảm ơn bạn! Đơn hàng sẽ được giao trong 2-3 ngày"
 Đóng hội thoại ID "conv123", gắn tag "đã xử lý"
 ```
+
+> **⚠️ Workflow gửi tin nhắn (quan trọng):**
+>
+> `send_message` yêu cầu `page_access_token` (không phải `access_token`). Workflow 2 bước:
+> 1. Gọi `generate_page_access_token(page_id)` để lấy token
+> 2. Gọi `send_message(page_id, conversation_id, message, page_access_token)`
+>
+> Ví dụ với Claude:
+> ```
+> Gửi tin nhắn "Xin chào!" đến hội thoại "conv123" trên page "page456"
+> ```
+> Claude sẽ tự động gọi `generate_page_access_token` rồi `send_message`.
 
 **Đính kèm file:**
 ```
