@@ -125,6 +125,7 @@ def register_conversation_tools(mcp: Any) -> None:
         """Send a message or reply in a conversation.
 
         Can reply to both inbox DMs and comments.
+        Note: Internally adds 'action: message' to payload (required by Pancake API).
 
         Args:
             page_id: Pancake page ID.
